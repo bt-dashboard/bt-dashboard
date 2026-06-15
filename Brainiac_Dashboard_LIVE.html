@@ -263,7 +263,7 @@ async function loadData(){
     DATA.students = [];
     if(stuTable && stuTable.rows){
       stuTable.rows.forEach((row,ri) => {
-        if(ri < 2) return; // skip 2 header rows
+        if(ri < 3) return; // skip 3 header rows
         const c = row.c || [];
         const name = c[1]?.v;
         if(!name) return;
@@ -297,7 +297,7 @@ async function loadData(){
     DATA.external = [];
     if(extTable && extTable.rows){
       extTable.rows.forEach((row,ri) => {
-        if(ri < 2) return;
+        if(ri < 3) return;
         const c = row.c || [];
         const inst = c[2]?.v;
         if(!inst) return;
@@ -321,7 +321,7 @@ async function loadData(){
     DATA.payments = {};
     if(payTable && payTable.rows){
       payTable.rows.forEach((row,ri) => {
-        if(ri < 3) return; // 3 header rows in payments sheet
+        if(ri < 4) return; // 4 header rows in payments sheet
         const c = row.c || [];
         const name = c[1]?.v;
         if(!name) return;

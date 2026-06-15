@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brainiac's Tutelage — Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  :root {
+    --navy:#1F3864;--gold:#C9A84C;--cream:#FAFAF7;--white:#FFFFFF;
+    --text:#1A1A2E;--muted:#6B7280;--border:#E5E7EB;
+    --green:#15803D;--green-bg:#DCFCE7;--amber:#D97706;--amber-bg:#FEF3C7;
+    --red:#DC2626;--red-bg:#FEE2E2;--blue:#1D4ED8;--blue-bg:#EFF6FF;
+    --shadow:0 1px 3px rgba(0,0,0,0.08);--shadow-md:0 4px 6px rgba(0,0,0,0.07);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);min-height:100vh}
+  .header{background:var(--navy);padding:0 1.5rem;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+  .header-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px;gap:1rem}
+  .logo-mark{width:36px;height:36px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--navy);flex-shrink:0}
+  .header-title{color:var(--white);font-size:15px;font-weight:600}
+  .header-sub{color:rgba(255,255,255,0.55);font-size:11px;margin-top:1px}
+  .header-right{display:flex;align-items:center;gap:10px}
+  .month-pill{background:var(--gold);color:var(--navy);font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;white-space:nowrap}
+  .sync-btn{background:rgba(255,255,255,0.15);color:var(--white);border:none;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif}
+  .sync-btn:hover{background:rgba(255,255,255,0.25)}
+  .loading{display:flex;align-items:center;justify-content:center;min-height:60vh;flex-direction:column;gap:12px;color:var(--muted)}
+  .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin 0.8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .tabs{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem}
+  .tabs-inner{max-width:1200px;margin:0 auto;display:flex;overflow-x:auto;scrollbar-width:none}
+  .tabs-inner::-webkit-scrollbar{display:none}
+  .tab-btn{padding:14px 18px;font-size:13px;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s;font-family:'Inter',sans-serif}
+  .tab-btn.active{color:var(--navy);border-bottom-color:var(--navy);font-weight:600}
+  .main{max-width:1200px;margin:0 auto;padding:1.5rem}
+  .panel{display:none}.panel.active{display:block}
+  .alert{background:var(--red-bg);border:1px solid #FECACA;border-left:4px solid var(--red);border-radius:8px;padding:12px 16px;margin-bottom:1rem;display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--red)}
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:1.5rem}
+  .metric{background:var(--white);border-radius:12px;padding:1rem 1.125rem;box-shadow:var(--shadow);border:1px solid var(--border)}
+  .metric-label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+  .metric-value{font-size:20px;font-weight:700;color:var(--navy);line-height:1}
+  .metric-value.green{color:var(--green)}.metric-value.red{color:var(--red)}.metric-value.amber{color:var(--amber)}
+  .metric-sub{font-size:11px;color:var(--muted);margin-top:4px}
+  .card{background:var(--white);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:1.25rem;overflow:hidden}
+  .card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .card-title{font-size:13px;font-weight:600;color:var(--navy)}
+  .card-body{padding:18px}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+  @media(max-width:640px){.two-col{grid-template-columns:1fr}}
+  .rev-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+  .rev-row:last-child{border-bottom:none}
+  .rev-label{color:var(--muted)}.rev-val{font-weight:600}
+  .rev-val.green{color:var(--green)}
+  .rev-total{display:flex;justify-content:space-between;align-items:center;padding:10px 0 0;font-size:14px;font-weight:700;color:var(--navy);border-top:2px solid var(--navy);margin-top:4px}
+  .tbl-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;padding:10px 12px;background:#F9FAFB;border-bottom:1px solid var(--border);white-space:nowrap}
+  td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#F9FAFB}
+  .badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap}
+  .badge-paid{background:var(--green-bg);color:var(--green)}
+  .badge-pending{background:var(--amber-bg);color:var(--amber)}
+  .badge-overdue{background:var(--red-bg);color:var(--red)}
+  .badge-active{background:var(--blue-bg);color:var(--blue)}
+  .badge-revoke{background:var(--red-bg);color:var(--red)}
+  .badge-received{background:var(--green-bg);color:var(--green)}
+  .badge-partial{background:var(--amber-bg);color:var(--amber)}
+  .badge-bt{background:var(--blue-bg);color:var(--blue)}
+  .badge-ext{background:var(--amber-bg);color:var(--amber)}
+  .badge-guest{background:var(--green-bg);color:var(--green)}
+  .month-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem}
+  .month-chip{font-size:12px;font-weight:500;padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:var(--white);color:var(--muted);cursor:pointer;transition:all 0.15s}
+  .month-chip.active{background:var(--navy);color:var(--white);border-color:var(--navy)}
+  .filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem}
+  .filter-row select,.filter-row input{font-size:13px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--white);color:var(--text);outline:none;font-family:'Inter',sans-serif}
+  .salary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .salary-card{border-radius:10px;padding:1rem 1.125rem;border:1px solid var(--border)}
+  .salary-card.emjay{background:linear-gradient(135deg,#1F3864,#2E4F8A)}
+  .salary-card.junaid{background:linear-gradient(135deg,#166534,#15803D)}
+  .salary-card.guest{background:linear-gradient(135deg,#92400E,#B45309)}
+  .salary-card.bt{background:linear-gradient(135deg,#374151,#4B5563)}
+  .salary-name{font-size:12px;font-weight:500;color:rgba(255,255,255,0.7);margin-bottom:2px}
+  .salary-role{font-size:10px;color:rgba(255,255,255,0.5);margin-bottom:10px}
+  .salary-amount{font-size:22px;font-weight:700;color:var(--white)}
+  .salary-sub{font-size:11px;color:rgba(255,255,255,0.6);margin-top:4px}
+  .progress-wrap{margin-top:8px}
+  .progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
+  .progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:3px;transition:width 0.4s}
+  .progress-fill.green{background:var(--green)}.progress-fill.amber{background:var(--amber)}.progress-fill.red{background:var(--red)}
+  .section-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px}
+  .empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:13px}
+  .bar-chart{display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:10px}
+  .bar-labels{display:flex;gap:8px;margin-top:6px}
+  .last-sync{font-size:11px;color:rgba(255,255,255,0.45);white-space:nowrap}
+  .footer{text-align:center;padding:2rem;font-size:11px;color:var(--muted);border-top:1px solid var(--border);margin-top:1rem}
+  .error-box{background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:1rem;margin-bottom:1rem;font-size:13px;color:#92400E}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="logo-mark">B</div>
+      <div>
+        <div class="header-title">Brainiac's Tutelage</div>
+        <div class="header-sub">Sir Emjay — Live Dashboard</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="last-sync" id="lastSync">Loading...</span>
+      <button class="sync-btn" onclick="loadData()">↻ Refresh</button>
+      <div class="month-pill" id="headerMonth">—</div>
+    </div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tabs-inner">
+    <button class="tab-btn active" onclick="showPanel('overview',this)">Overview</button>
+    <button class="tab-btn" onclick="showPanel('students',this)">Students</button>
+    <button class="tab-btn" onclick="showPanel('external',this)">External Institutes</button>
+    <button class="tab-btn" onclick="showPanel('salary',this)">Salary</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <div id="loadingArea" class="loading">
+    <div class="spinner"></div>
+    <div>Connecting to your Google Sheet...</div>
+  </div>
+
+  <div id="errorArea" style="display:none"></div>
+
+  <div id="dashContent" style="display:none">
+
+    <!-- OVERVIEW -->
+    <div class="panel active" id="panel-overview">
+      <div class="month-row" id="monthRow"></div>
+      <div id="alertsArea"></div>
+      <p class="section-label">This month at a glance</p>
+      <div class="metrics" id="metricsArea"></div>
+      <div class="two-col">
+        <div class="card"><div class="card-header"><span class="card-title">BT Revenue Split</span></div><div class="card-body" id="btSplit"></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">External Revenue Split</span></div><div class="card-body" id="extSplit"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Monthly Revenue Trend (Jun-26 to May-27)</span></div>
+        <div class="card-body">
+          <div class="bar-chart" id="trendChart"></div>
+          <div class="bar-labels" id="trendLabels"></div>
+        </div>
+      </div>
+      <div class="card"><div class="card-header"><span class="card-title">Fee Collection Status</span></div><div class="card-body" id="feeStatus"></div></div>
+    </div>
+
+    <!-- STUDENTS -->
+    <div class="panel" id="panel-students">
+      <div class="month-row" id="monthRow2"></div>
+      <div class="filter-row">
+        <select id="fCourse"><option value="">All courses</option></select>
+        <select id="fStatus"><option value="">All statuses</option><option value="paid">Paid</option><option value="pending">Pending</option><option value="overdue">Overdue</option></select>
+        <select id="fSession"><option value="">All sessions</option><option>Oct/Nov 2026</option><option>May/Jun 2027</option></select>
+        <select id="fType"><option value="">All types</option><option value="BT Student">BT</option><option value="External Student">External</option><option value="BT-Guest Teacher">Guest Teacher</option></select>
+        <input id="fSearch" placeholder="Search student...">
+      </div>
+      <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Student</th><th>Course</th><th>Type</th><th>Session</th><th>Fee Due</th><th>Status</th><th>Drive</th><th>Reference</th></tr></thead><tbody id="studentBody"></tbody></table></div></div>
+    </div>
+
+    <!-- EXTERNAL -->
+    <div class="panel" id="panel-external">
+      <div class="month-row" id="monthRow3"></div>
+      <div class="card"><div class="card-header"><span class="card-title">Partner Institute Payments</span></div><div class="tbl-wrap"><table><thead><tr><th>Institute</th><th>Students</th><th>Expected</th><th>Received</th><th>Status</th><th>Sir Emjay (97%)</th><th>Junaid (3%)</th></tr></thead><tbody id="externalBody"></tbody></table></div></div>
+      <div class="card"><div class="card-header"><span class="card-title">Outstanding Payments</span></div><div class="card-body" id="outstandingArea"></div></div>
+    </div>
+
+    <!-- SALARY -->
+    <div class="panel" id="panel-salary">
+      <div class="month-row" id="monthRow4"></div>
+      <p class="section-label">Monthly salary — <span id="salaryMonthLabel">—</span></p>
+      <div class="salary-grid" id="salaryGrid"></div>
+      <div class="card" style="margin-top:1.25rem">
+        <div class="card-header"><span class="card-title">Your Annual Earnings Trend</span></div>
+        <div class="card-body">
+          <div class="bar-chart" id="annualChart"></div>
+          <div class="bar-labels" id="annualLabels"></div>
+        </div>
+      </div>
+      <div class="card"><div class="card-header"><span class="card-title">Salary Breakdown by Stream</span></div><div class="card-body" id="salaryBreakdown"></div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">Brainiac's Tutelage · Live Dashboard · Data pulled directly from Google Sheet · Last updated: <span id="footerSync">—</span></div>
+
+<script>
+const SHEET_ID = '13PhyaVG2mdWbF8VG3dnYolwgHeX_9EXXXrv_5rneI5E';
+const MONTHS = ['Jun-26','Jul-26','Aug-26','Sep-26','Oct-26','Nov-26','Dec-26','Jan-27','Feb-27','Mar-27','Apr-27','May-27'];
+const SHEET_NAMES = { summary:'Monthly%20Summary%20%26%20Salary', students:'Students', external:'External%20Institutes', payments:'Monthly%20Payments' };
+
+let currentMonth = 'Jun-26';
+let DATA = { summary:{}, students:[], external:[], payments:[] };
+
+function pkr(n){ return 'Rs. ' + Math.round(n||0).toLocaleString(); }
+function gv(v){ return (v && v.trim && v.trim()!=='' && v.trim()!=='—') ? v.trim() : null; }
+function gn(v){ const n=parseFloat((v||'').toString().replace(/,/g,'')); return isNaN(n)?0:n; }
+
+async function fetchSheet(sheetName){
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheetName}`;
+  const res = await fetch(url);
+  const txt = await res.text();
+  const json = JSON.parse(txt.substring(47).slice(0,-2));
+  return json.table;
+}
+
+function parseRows(table, headerRow=0){
+  if(!table || !table.rows) return [];
+  const headers = table.rows[headerRow]?.c?.map(c => c?.v || '') || [];
+  return table.rows.slice(headerRow+1).map(row => {
+    const obj = {};
+    (row.c || []).forEach((cell,i) => { obj[headers[i]] = cell?.v ?? cell?.f ?? ''; });
+    return obj;
+  }).filter(r => Object.values(r).some(v => v !== '' && v !== null));
+}
+
+async function loadData(){
+  document.getElementById('loadingArea').style.display='flex';
+  document.getElementById('dashContent').style.display='none';
+  document.getElementById('errorArea').style.display='none';
+
+  try {
+    // Fetch all sheets
+    const [sumTable, stuTable, extTable, payTable] = await Promise.all([
+      fetchSheet(SHEET_NAMES.summary),
+      fetchSheet(SHEET_NAMES.students),
+      fetchSheet(SHEET_NAMES.external),
+      fetchSheet(SHEET_NAMES.payments),
+    ]);
+
+    // Parse Summary — rows 3-14 are month data (index 2-13 after 2 header rows)
+    DATA.summary = {};
+    if(sumTable && sumTable.rows){
+      sumTable.rows.forEach(row => {
+        const cells = row.c || [];
+        const month = cells[0]?.v;
+        if(MONTHS.includes(month)){
+          DATA.summary[month] = {
+            btTuition: gn(cells[1]?.v),
+            regFee:    gn(cells[2]?.v),
+            bookletFee:gn(cells[3]?.v),
+            extRevenue:gn(cells[4]?.v),
+            guestFee:  gn(cells[5]?.v),
+          };
+        }
+      });
+    }
+
+    // Parse Students
+    DATA.students = [];
+    if(stuTable && stuTable.rows){
+      stuTable.rows.forEach((row,ri) => {
+        if(ri < 2) return; // skip 2 header rows
+        const c = row.c || [];
+        const name = c[1]?.v;
+        if(!name) return;
+        DATA.students.push({
+          name:      String(name),
+          fatherName:String(c[2]?.v||''),
+          contact:   String(c[3]?.v||''),
+          email:     String(c[4]?.v||''),
+          ref:       String(c[5]?.v||'—'),
+          type:      String(c[6]?.v||'BT Student'),
+          guestTeacher:String(c[7]?.v||''),
+          extInstitute:String(c[8]?.v||''),
+          course:    String(c[9]?.v||''),
+          grade:     String(c[10]?.v||''),
+          session:   String(c[11]?.v||''),
+          feeType:   String(c[12]?.v||'Monthly'),
+          totalFee:  gn(c[13]?.v),
+          concession:gn(c[14]?.v),
+          netFee:    gn(c[15]?.v),
+          instalments:gn(c[16]?.v),
+          monthlyAmt:gn(c[17]?.v),
+          status:    String(c[18]?.v||'Enrolled'),
+          drive:     String(c[20]?.v||'Not Given'),
+          regDate:   String(c[24]?.v||''),
+          comments:  String(c[25]?.v||''),
+        });
+      });
+    }
+
+    // Parse External
+    DATA.external = [];
+    if(extTable && extTable.rows){
+      extTable.rows.forEach((row,ri) => {
+        if(ri < 2) return;
+        const c = row.c || [];
+        const inst = c[2]?.v;
+        if(!inst) return;
+        DATA.external.push({
+          month:     String(c[1]?.v||''),
+          name:      String(inst),
+          students:  gn(c[3]?.v),
+          totalCharged: gn(c[4]?.v),
+          sharePercent: gn(c[5]?.v)||80,
+          expected:  gn(c[6]?.v),
+          received:  gn(c[7]?.v),
+          status:    String(c[8]?.v||'Pending'),
+          dateReceived:String(c[9]?.v||''),
+          bank:      String(c[10]?.v||''),
+          receipt:   String(c[11]?.v||''),
+        });
+      });
+    }
+
+    // Parse Payment rows for student fee status
+    DATA.payments = {};
+    if(payTable && payTable.rows){
+      payTable.rows.forEach((row,ri) => {
+        if(ri < 3) return; // 3 header rows in payments sheet
+        const c = row.c || [];
+        const name = c[1]?.v;
+        if(!name) return;
+        if(!DATA.payments[name]) DATA.payments[name] = {};
+        // Each month has 6 cols starting at index 5
+        MONTHS.forEach((m,mi) => {
+          const base = 5 + mi*6;
+          const amt = gn(c[base]?.v);
+          const date = c[base+1]?.v;
+          if(amt > 0) DATA.payments[name][m] = { paid:true, amount:amt, date:String(date||'') };
+          else DATA.payments[name][m] = { paid:false, amount:0, date:'' };
+        });
+      });
+    }
+
+    const now = new Date();
+    const syncStr = now.toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'}) + ' · ' + now.toLocaleDateString('en-PK');
+    document.getElementById('lastSync').textContent = 'Synced ' + syncStr;
+    document.getElementById('footerSync').textContent = syncStr;
+
+    // Populate course filter
+    const courses = [...new Set(DATA.students.map(s=>s.course).filter(Boolean))];
+    const fCourse = document.getElementById('fCourse');
+    fCourse.innerHTML = '<option value="">All courses</option>' + courses.map(c=>`<option>${c}</option>`).join('');
+
+    document.getElementById('loadingArea').style.display='none';
+    document.getElementById('dashContent').style.display='block';
+
+    buildMonthRows();
+    renderAll();
+
+  } catch(err){
+    document.getElementById('loadingArea').style.display='none';
+    document.getElementById('errorArea').style.display='block';
+    document.getElementById('errorArea').innerHTML = `
+      <div class="error-box">
+        ⚠️ Could not load data from Google Sheet. Please make sure the sheet is set to "Anyone with the link can view".<br><br>
+        <small>Error: ${err.message}</small><br><br>
+        <button onclick="loadData()" style="margin-top:8px;padding:6px 14px;background:var(--navy);color:white;border:none;border-radius:6px;cursor:pointer;font-family:Inter,sans-serif">Try Again</button>
+      </div>`;
+  }
+}
+
+function getFeeStatus(student){
+  const p = DATA.payments[student.name]?.[currentMonth];
+  if(p && p.paid) return 'paid';
+  const today = new Date();
+  if(today.getDate() > 5) return 'overdue';
+  return 'pending';
+}
+
+function showPanel(name, btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+function buildMonthRows(){
+  ['monthRow','monthRow2','monthRow3','monthRow4'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = MONTHS.map(m=>`<button class="month-chip${m===currentMonth?' active':''}" onclick="setMonth('${m}')">${m}</button>`).join('');
+  });
+  document.getElementById('headerMonth').textContent = currentMonth;
+  document.getElementById('salaryMonthLabel').textContent = currentMonth;
+}
+
+function setMonth(m){ currentMonth=m; buildMonthRows(); renderAll(); }
+
+function renderAlerts(){
+  const overdue = DATA.students.filter(s=>getFeeStatus(s)==='overdue');
+  const el=document.getElementById('alertsArea');
+  el.innerHTML = overdue.length ? overdue.map(s=>`<div class="alert">⚠️ <span><strong>${s.name}</strong> — fee overdue for ${currentMonth}. Revoke Google Drive access immediately.</span></div>`).join('') : '';
+}
+
+function renderMetrics(){
+  const d = DATA.summary[currentMonth]||{};
+  const bt=d.btTuition||0, ext=d.extRevenue||0, reg=d.regFee||0, book=d.bookletFee||0, guest=d.guestFee||0;
+  const myEarnings = bt*0.70 + ext*0.97 + reg*0.97 + book*0.97;
+  const junaid = bt*0.07 + ext*0.03 + reg*0.03 + book*0.03 + guest*0.07;
+  const total = bt+ext+reg+book+guest;
+  const paid=DATA.students.filter(s=>getFeeStatus(s)==='paid').length;
+  const pending=DATA.students.filter(s=>getFeeStatus(s)==='pending').length;
+  const overdue=DATA.students.filter(s=>getFeeStatus(s)==='overdue').length;
+  document.getElementById('metricsArea').innerHTML=`
+    <div class="metric"><div class="metric-label">Total Revenue</div><div class="metric-value">${pkr(total)}</div><div class="metric-sub">All streams</div></div>
+    <div class="metric"><div class="metric-label">Your Earnings</div><div class="metric-value green">${pkr(myEarnings)}</div><div class="metric-sub">BT 70% + Ext 97%</div></div>
+    <div class="metric"><div class="metric-label">Junaid's Share</div><div class="metric-value">${pkr(junaid)}</div><div class="metric-sub">BT 7% + Ext 3%</div></div>
+    <div class="metric"><div class="metric-label">BT Tuition</div><div class="metric-value">${pkr(bt)}</div><div class="metric-sub">Own students</div></div>
+    <div class="metric"><div class="metric-label">External</div><div class="metric-value">${pkr(ext)}</div><div class="metric-sub">Partner institutes</div></div>
+    <div class="metric"><div class="metric-label">Fees Paid</div><div class="metric-value green">${paid}</div><div class="metric-sub">Students</div></div>
+    <div class="metric"><div class="metric-label">Pending</div><div class="metric-value amber">${pending}</div><div class="metric-sub">Awaiting</div></div>
+    <div class="metric"><div class="metric-label">Overdue</div><div class="metric-value red">${overdue}</div><div class="metric-sub">Past 5th</div></div>`;
+}
+
+function renderSplits(){
+  const d=DATA.summary[currentMonth]||{};
+  const bt=d.btTuition||0, ext=d.extRevenue||0;
+  document.getElementById('btSplit').innerHTML = bt>0 ? `
+    <div class="rev-row"><span class="rev-label">Sir Emjay (70%)</span><span class="rev-val green">${pkr(bt*0.70)}</span></div>
+    <div class="rev-row"><span class="rev-label">Junaid (7%)</span><span class="rev-val">${pkr(bt*0.07)}</span></div>
+    <div class="rev-row"><span class="rev-label">BT Misc (23%)</span><span class="rev-val">${pkr(bt*0.23)}</span></div>
+    <div class="rev-total"><span>Total BT</span><span>${pkr(bt)}</span></div>` : `<div class="empty">No BT tuition data for ${currentMonth}</div>`;
+  document.getElementById('extSplit').innerHTML = ext>0 ? `
+    <div class="rev-row"><span class="rev-label">Sir Emjay (97%)</span><span class="rev-val green">${pkr(ext*0.97)}</span></div>
+    <div class="rev-row"><span class="rev-label">Junaid (3%)</span><span class="rev-val">${pkr(ext*0.03)}</span></div>
+    <div class="rev-total"><span>Total External</span><span>${pkr(ext)}</span></div>` : `<div class="empty">No external revenue for ${currentMonth}</div>`;
+}
+
+function renderTrend(){
+  const vals=MONTHS.map(m=>{const d=DATA.summary[m]||{};return (d.btTuition||0)+(d.extRevenue||0)+(d.regFee||0);});
+  const max=Math.max(...vals,1);
+  document.getElementById('trendChart').innerHTML=vals.map((v,i)=>{
+    const h=Math.max((v/max)*100,v>0?6:2);
+    const active=MONTHS[i]===currentMonth;
+    return `<div style="flex:1;cursor:pointer" onclick="setMonth('${MONTHS[i]}')"><div style="width:100%;height:${h}px;background:${active?'var(--navy)':'var(--border)'};border-radius:4px 4px 0 0" title="${pkr(v)}"></div></div>`;
+  }).join('');
+  document.getElementById('trendLabels').innerHTML=vals.map((_,i)=>{
+    const active=MONTHS[i]===currentMonth;
+    return `<div style="flex:1;font-size:9px;color:${active?'var(--navy)':'var(--muted)'};text-align:center;font-weight:${active?700:400}">${MONTHS[i].split('-')[0]}</div>`;
+  }).join('');
+}
+
+function renderFeeStatus(){
+  const total=DATA.students.length||1;
+  const paid=DATA.students.filter(s=>getFeeStatus(s)==='paid').length;
+  const pending=DATA.students.filter(s=>getFeeStatus(s)==='pending').length;
+  const overdue=DATA.students.filter(s=>getFeeStatus(s)==='overdue').length;
+  const pct=v=>Math.round((v/total)*100);
+  document.getElementById('feeStatus').innerHTML=`
+    <div class="progress-wrap"><div class="progress-label"><span>Paid (${paid})</span><span>${pct(paid)}%</span></div><div class="progress-bar"><div class="progress-fill green" style="width:${pct(paid)}%"></div></div></div>
+    <div class="progress-wrap" style="margin-top:10px"><div class="progress-label"><span>Pending (${pending})</span><span>${pct(pending)}%</span></div><div class="progress-bar"><div class="progress-fill amber" style="width:${pct(pending)}%"></div></div></div>
+    <div class="progress-wrap" style="margin-top:10px"><div class="progress-label"><span>Overdue (${overdue})</span><span>${pct(overdue)}%</span></div><div class="progress-bar"><div class="progress-fill red" style="width:${pct(overdue)}%"></div></div></div>`;
+}
+
+function renderStudents(){
+  const cF=document.getElementById('fCourse').value;
+  const sF=document.getElementById('fStatus').value;
+  const seF=document.getElementById('fSession').value;
+  const tF=document.getElementById('fType').value;
+  const srch=document.getElementById('fSearch').value.toLowerCase();
+  const filtered=DATA.students.filter(s=>{
+    if(cF && s.course!==cF) return false;
+    if(sF && getFeeStatus(s)!==sF) return false;
+    if(seF && s.session!==seF) return false;
+    if(tF && s.type!==tF) return false;
+    if(srch && !s.name.toLowerCase().includes(srch)) return false;
+    return true;
+  });
+  const tbody=document.getElementById('studentBody');
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="8"><div class="empty">No students match the filters</div></td></tr>`;return;}
+  tbody.innerHTML=filtered.map(s=>{
+    const st=getFeeStatus(s);
+    const stB=st==='paid'?'<span class="badge badge-paid">Paid</span>':st==='overdue'?'<span class="badge badge-overdue">Overdue</span>':'<span class="badge badge-pending">Pending</span>';
+    const drB=st==='overdue'?'<span class="badge badge-revoke">⚠ Revoke</span>':'<span class="badge badge-active">Active</span>';
+    const tyB=s.type==='External Student'?'<span class="badge badge-ext">External</span>':s.type==='BT-Guest Teacher'?'<span class="badge badge-guest">Guest</span>':'<span class="badge badge-bt">BT</span>';
+    return `<tr><td style="font-weight:500">${s.name}</td><td style="font-size:12px">${s.course}</td><td>${tyB}</td><td style="font-size:11px;color:var(--muted)">${s.session}</td><td style="font-weight:500">${pkr(s.monthlyAmt||s.netFee)}</td><td>${stB}</td><td>${drB}</td><td style="font-size:12px;color:var(--muted)">${s.ref}</td></tr>`;
+  }).join('');
+}
+
+function renderExternal(){
+  const ext=DATA.external.filter(e=>e.month===currentMonth);
+  const tbody=document.getElementById('externalBody');
+  if(!ext.length){tbody.innerHTML=`<tr><td colspan="7"><div class="empty">No external data for ${currentMonth}</div></td></tr>`;}
+  else tbody.innerHTML=ext.map(e=>{
+    const stB=e.status==='Received'?'<span class="badge badge-received">Received</span>':e.status==='Partial'?'<span class="badge badge-partial">Partial</span>':'<span class="badge badge-overdue">Pending</span>';
+    return `<tr><td style="font-weight:500">${e.name}</td><td style="text-align:center">${e.students||'—'}</td><td>${e.expected?pkr(e.expected):'—'}</td><td style="font-weight:500">${e.received?pkr(e.received):'—'}</td><td>${stB}</td><td style="color:var(--green);font-weight:600">${e.received?pkr(e.received*0.97):'—'}</td><td>${e.received?pkr(e.received*0.03):'—'}</td></tr>`;
+  }).join('');
+  const outstanding=DATA.external.filter(e=>e.month===currentMonth&&e.status!=='Received'&&e.expected>0);
+  document.getElementById('outstandingArea').innerHTML=outstanding.length
+    ? outstanding.map(e=>`<div class="alert">⏳ <span><strong>${e.name}</strong> — ${pkr(e.expected)} pending. Follow up.</span></div>`).join('')
+    : `<div style="color:var(--green);font-size:13px;font-weight:500">✅ All institute payments received for ${currentMonth}</div>`;
+}
+
+function renderSalary(){
+  const d=DATA.summary[currentMonth]||{};
+  const bt=d.btTuition||0,ext=d.extRevenue||0,reg=d.regFee||0,book=d.bookletFee||0,guest=d.guestFee||0;
+  const emjay=bt*0.70+ext*0.97+reg*0.97+book*0.97;
+  const junaid=bt*0.07+ext*0.03+reg*0.03+book*0.03+guest*0.07;
+  const guestAmt=guest*0.80;
+  const btMisc=bt*0.23+guest*0.13;
+  document.getElementById('salaryGrid').innerHTML=`
+    <div class="salary-card emjay"><div class="salary-name">Sir Emjay</div><div class="salary-role">Director & Teacher</div><div class="salary-amount">${pkr(emjay)}</div><div class="salary-sub">BT 70% + External 97%</div></div>
+    <div class="salary-card junaid"><div class="salary-name">Junaid Ur Rehman</div><div class="salary-role">Admin BT</div><div class="salary-amount">${pkr(junaid)}</div><div class="salary-sub">BT 7% + External 3%</div></div>
+    <div class="salary-card guest"><div class="salary-name">Guest Teacher</div><div class="salary-role">As Applicable</div><div class="salary-amount">${guest?pkr(guestAmt):'None this month'}</div><div class="salary-sub">80% of guest students</div></div>
+    <div class="salary-card bt"><div class="salary-name">BT Account</div><div class="salary-role">Misc / Savings</div><div class="salary-amount">${pkr(btMisc)}</div><div class="salary-sub">BT 23% + Guest 13%</div></div>`;
+  const annualVals=MONTHS.map(m=>{const md=DATA.summary[m]||{};return (md.btTuition||0)*0.70+(md.extRevenue||0)*0.97+(md.regFee||0)*0.97;});
+  const maxA=Math.max(...annualVals,1);
+  document.getElementById('annualChart').innerHTML=annualVals.map((v,i)=>{
+    const h=Math.max((v/maxA)*90,v>0?6:2);
+    const active=MONTHS[i]===currentMonth;
+    return `<div style="flex:1;height:${h}px;background:${active?'var(--gold)':'var(--border)'};border-radius:3px 3px 0 0" title="${pkr(v)}"></div>`;
+  }).join('');
+  document.getElementById('annualLabels').innerHTML=MONTHS.map((m,i)=>{
+    const active=m===currentMonth;
+    return `<div style="flex:1;font-size:9px;color:${active?'var(--gold)':'var(--muted)'};text-align:center;font-weight:${active?700:400}">${m.split('-')[0]}</div>`;
+  }).join('');
+  document.getElementById('salaryBreakdown').innerHTML=`
+    <div class="rev-row"><span class="rev-label">BT Tuition (70%)</span><span class="rev-val green">${pkr(bt*0.70)}</span></div>
+    <div class="rev-row"><span class="rev-label">External Revenue (97%)</span><span class="rev-val green">${pkr(ext*0.97)}</span></div>
+    <div class="rev-row"><span class="rev-label">Registration Fee (97%)</span><span class="rev-val green">${pkr(reg*0.97)}</span></div>
+    <div class="rev-row"><span class="rev-label">Booklet Fee (97%)</span><span class="rev-val green">${pkr(book*0.97)}</span></div>
+    <div class="rev-row"><span class="rev-label">Guest Teacher Students</span><span class="rev-val" style="color:var(--muted)">0% (not applicable)</span></div>
+    <div class="rev-total"><span>Your Total This Month</span><span style="color:var(--green)">${pkr(emjay)}</span></div>`;
+}
+
+function renderAll(){
+  renderAlerts();renderMetrics();renderSplits();renderTrend();
+  renderFeeStatus();renderStudents();renderExternal();renderSalary();
+}
+
+['fCourse','fStatus','fSession','fType','fSearch'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener('input',renderStudents);
+});
+
+loadData();
+</script>
+</body>
+</html>

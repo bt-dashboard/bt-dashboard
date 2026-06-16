@@ -241,16 +241,6 @@ async function loadData(){
       fetchSheet(SHEET_NAMES.payments),
     ]);
 
-
-    // DEBUG - log first few rows
-    console.log('Total student rows from API:', stuTable ? stuTable.rows.length : 0);
-    if(stuTable && stuTable.rows) {
-      stuTable.rows.slice(0,5).forEach((row,i) => {
-        const cells = row.c || [];
-        console.log('Row ' + i + ':', cells.slice(0,5).map(c => c ? c.v : 'null'));
-      });
-    }
-
     // Parse Summary — rows 3-14 are month data (index 2-13 after 2 header rows)
     DATA.summary = {};
     if(sumTable && sumTable.rows){
@@ -273,13 +263,10 @@ async function loadData(){
     DATA.students = [];
     if(stuTable && stuTable.rows){
       stuTable.rows.forEach((row,ri) => {
+        // API returns data directly, no header rows to skip
         const c = row.c || [];
-        // Skip rows where column B (index 1) is empty or is a header
-        const nameVal = c[1]?.v;
-        if(!nameVal) return;
-        if(String(nameVal).toLowerCase().includes('student name')) return;
-        if(String(nameVal).toLowerCase().includes('brainiac')) return;
-        if(String(nameVal).toLowerCase().includes('use dropdowns')) return;
+        const name = c[1]?.v;
+        if(!name) return;
         DATA.students.push({
           name:      String(name),
           fatherName:String(c[2]?.v||''),
@@ -310,7 +297,7 @@ async function loadData(){
     DATA.external = [];
     if(extTable && extTable.rows){
       extTable.rows.forEach((row,ri) => {
-        if(ri < 3) return;
+        // no skip needed
         const c = row.c || [];
         const inst = c[2]?.v;
         if(!inst) return;
@@ -334,7 +321,7 @@ async function loadData(){
     DATA.payments = {};
     if(payTable && payTable.rows){
       payTable.rows.forEach((row,ri) => {
-        if(ri < 4) return; // 4 header rows in payments sheet
+        // API returns data directly
         const c = row.c || [];
         const name = c[1]?.v;
         if(!name) return;
